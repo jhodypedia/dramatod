@@ -2,7 +2,13 @@
 <div class="episode-list">
   <% (chapters || []).forEach(ch => { %>
     <a class="episode" href="/watch/<%= bookId %>/<%= ch.index %>">
-      Episode <%= ch.index %> <span class="muted"><%= ch.chapterName || '' %></span>
+      <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>&w=50"
+           data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>"
+           class="lazy blur" alt="episode"/>
+      Episode <%= ch.index %>
+      <span class="muted"><%= ch.chapterName || '' %></span>
     </a>
   <% }) %>
 </div>
+
+<script src="/public/js/lazyload.js"></script>
