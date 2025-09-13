@@ -1,7 +1,7 @@
 <% if (hero) { %>
 <section class="hero">
-  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || '') %>&w=50"
-       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || '') %>"
+  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || '') %>&w=50"
+       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || '') %>"
        class="lazy blur" alt="hero"/>
   <div class="overlay"></div>
   <div class="content">
@@ -18,8 +18,8 @@
     <% (row.items || []).forEach(item => { %>
       <div class="card">
         <a href="/detail/<%= item.bookId || item.id %>">
-          <img src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || '') %>&w=50"
-               data-src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || '') %>"
+          <img src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '') %>&w=50"
+               data-src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '') %>"
                class="lazy blur" alt="cover"/>
         </a>
       </div>
