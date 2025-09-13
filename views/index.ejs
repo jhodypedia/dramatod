@@ -1,0 +1,43 @@
+<% if (hero) { %>
+<section class="hero">
+  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || '') %>&w=50"
+       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || '') %>"
+       class="lazy blur" alt="hero"/>
+  <div class="overlay"></div>
+  <div class="content">
+    <h1><%= (hero.title || hero.bookName || 'Drama Pilihan') %></h1>
+    <a href="/detail/<%= hero.bookId || hero.id %>" class="btn">Tonton Sekarang</a>
+  </div>
+</section>
+<% } %>
+
+<% (rows || []).forEach(row => { %>
+<section class="row">
+  <h2><%= row.title %></h2>
+  <div class="scroll">
+    <% (row.items || []).forEach(item => { %>
+      <div class="card">
+        <a href="/detail/<%= item.bookId || item.id %>">
+          <img src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || '') %>&w=50"
+               data-src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || '') %>"
+               class="lazy blur" alt="cover"/>
+        </a>
+      </div>
+    <% }) %>
+  </div>
+</section>
+<% }) %>
+
+<section class="row">
+  <h2>Semua Drama</h2>
+  <div id="grid" class="grid"></div>
+  <div id="loader" class="grid">
+    <% for (let i=0;i<12;i++){ %>
+      <div class="item skeleton" style="height:260px;border-radius:12px"></div>
+    <% } %>
+  </div>
+</section>
+
+<script src="/public/js/infinite.js"></script>
+<script src="/public/js/lazyload.js"></script>
+<script> window.__START_PAGE__ = <%= Number(page || 1) %>; </script>
