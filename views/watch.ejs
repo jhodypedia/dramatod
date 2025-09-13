@@ -12,7 +12,7 @@
   <select id="quality" class="select">
     <option value="1080">1080p</option>
     <option value="720" selected>720p</option>
-    <option value="480">480p</option>
+    <option value="540">540p</option>
   </select>
 </section>
 
@@ -30,56 +30,108 @@
   let currentQuality = 720;
   let player;
 
-  function initPlayer(url){
+  // init player dengan custom button
+  function initPlayer(src, type){
     if(player) player.dispose();
-    player = videojs("player",{ fluid:true, autoplay:true, preload:"auto" });
-    player.src({ src:url, type:"application/x-mpegURL" });
+    player = videojs("player",{ fluid:true, autoplay:false, preload:"auto" });
+    player.src({ src, type });
 
-    // Prev/Next custom
+    // auto-next ketika selesai
+    player.on("ended", ()=> loadEpisode(currentIndex + 1));
+
+    // custom prev/next button
     const Btn = videojs.getComponent('Button');
-    class PrevBtn extends Btn { handleClick(){ loadEpisode(Math.max(1,currentIndex-1)); } }
-    class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex+1); } }
-    videojs.registerComponent('PrevBtn', PrevBtn); videojs.registerComponent('NextBtn', NextBtn);
-    player.ready(()=>{ const bar=player.getChild('controlBar'); bar.addChild('PrevBtn',{},0); bar.addChild('NextBtn',{},2); });
-    player.on('ended',()=>loadEpisode(currentIndex+1));
+
+    class PrevBtn extends Btn {
+      constructor(player, options){ super(player, options); this.controlText("Prev"); }
+      handleClick(){ if(currentIndex > 1) loadEpisode(currentIndex - 1); }
+    }
+    class NextBtn extends Btn {
+      constructor(player, options){ super(player, options); this.controlText("Next"); }
+      handleClick(){ loadEpisode(currentIndex + 1); }
+    }
+
+    videojs.registerComponent("PrevBtn", PrevBtn);
+    videojs.registerComponent("NextBtn", NextBtn);
+
+    player.ready(()=> {
+      const bar = player.getChild("controlBar");
+      bar.addChild("PrevBtn", {}, 0); // taruh di awal
+      bar.addChild("NextBtn", {}, 2); // taruh setelah tombol play
+    });
   }
 
+  // load specific episode
   async function loadEpisode(i){
     const res = await fetch(`/api/chapters/${bookId}?page=${Math.ceil(i/20)}`);
     const { list=[] } = await res.json();
     const ep = list.find(e => (e.index||e.chapterIndex) === i);
     if(!ep) return;
-    const v = (ep.cdnList?.[0]?.videoPathList?.find(x=>x.quality==currentQuality)) || ep.cdnList?.[0]?.videoPathList?.[0];
-    if(v){ currentIndex=i; initPlayer(v.videoPath); history.replaceState({}, "", `/watch/${bookId}/${i}`); }
-    highlightCard(i);
+
+    let source = null;
+    if (ep.cdnList?.[0]?.url) {
+      source = { src: ep.cdnList[0].url, type: "application/x-mpegURL" };
+    } else {
+      const v = ep.cdnList?.[0]?.videoPathList?.find(x=>x.quality === currentQuality)
+             || ep.cdnList?.[0]?.videoPathList?.[0];
+      if(v) source = { src:v.videoPath, type:"video/mp4" };
+    }
+
+    if(source){
+      currentIndex = i;
+      initPlayer(source.src, source.type);
+      highlightCard(i);
+      history.replaceState({}, "", `/watch/${bookId}/${i}`);
+      window.scrollTo({ top:0, behavior:"smooth" });
+    }
   }
 
+  // highlight current episode card
   function highlightCard(i){
     document.querySelectorAll(".card").forEach(x=>x.classList.remove("active"));
-    const el = document.querySelector(`.card[data-i="${i}"]`); if(el) el.classList.add("active");
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const el = document.querySelector(`.card[data-i="${i}"]`);
+    if(el) el.classList.add("active");
   }
 
-  // Episode list AJAX
-  let epPage = 1; const cont = document.getElementById("episode-scroll");
+  // load episode list
+  let epPage = 1;
+  const cont = document.getElementById("episode-scroll");
   async function loadList(){
     const res = await fetch(`/api/chapters/${bookId}?page=${epPage}`);
     const { list=[] } = await res.json();
     list.forEach(ch=>{
       const i = ch.index || ch.chapterIndex || 1;
-      const cover = ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '';
-      const a = document.createElement("a"); a.href="javascript:void(0)"; a.className="card hover3d"; a.dataset.i=i; a.onclick=()=>loadEpisode(i);
-      a.innerHTML = `<div class="thumb shimmer"><img src="/img?url=${encodeURIComponent(cover)}&w=50" data-src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"/></div>
-                     <div class="meta"><div class="name">Ep ${i}</div></div>`;
+      const cover = ch.cover || ch.coverImg || ch.coverWap || "";
+      const a = document.createElement("a");
+      a.href="javascript:void(0)";
+      a.className="card hover3d";
+      a.dataset.i=i;
+      a.onclick=()=>loadEpisode(i);
+      a.innerHTML = `
+        <div class="thumb shimmer">
+          <img src="/img?url=${encodeURIComponent(cover)}&w=50"
+               data-src="/img?url=${encodeURIComponent(cover)}"
+               class="lazy blur"/>
+        </div>
+        <div class="meta"><div class="name">Ep ${i}</div></div>
+      `;
       cont.appendChild(a);
     });
     if(!list.length) document.getElementById("moreEp").style.display="none";
-    epPage++; window.dispatchEvent(new Event("lazy-refresh")); highlightCard(currentIndex);
+    epPage++;
+    window.dispatchEvent(new Event("lazy-refresh"));
+    highlightCard(currentIndex);
   }
 
-  document.getElementById("quality").addEventListener("change",(e)=>{ currentQuality=parseInt(e.target.value); loadEpisode(currentIndex); });
+  // handle quality change
+  document.getElementById("quality").addEventListener("change",(e)=>{
+    currentQuality = parseInt(e.target.value);
+    loadEpisode(currentIndex);
+  });
+
   document.getElementById("moreEp").addEventListener("click", loadList);
 
   // start
-  loadList(); loadEpisode(currentIndex);
+  loadList();
+  loadEpisode(currentIndex);
 </script>
