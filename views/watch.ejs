@@ -11,7 +11,7 @@
   <h2>Pilih Episode</h2>
   <div class="scroll">
     <% (chapters || []).forEach(ch => { %>
-      <div class="card" onclick="loadEpisode(<%= ch.index %>)">
+      <div class="card <%= ch.index === index ? 'active' : '' %>" onclick="loadEpisode(<%= ch.index %>)">
         <img src="/img?url=<%= encodeURIComponent(ch.cover || chapter?.cover || '') %>&w=50"
              data-src="/img?url=<%= encodeURIComponent(ch.cover || chapter?.cover || '') %>"
              class="lazy blur" alt="ep"/>
@@ -30,11 +30,13 @@
   let currentIndex = <%= index %>;
   let player;
 
+  // 🚀 init player
   function initPlayer(url) {
     if (player) player.dispose();
     player = videojs("player", {
       fluid: true,
-      autoplay: false,
+      autoplay: true,
+      preload: "auto",
       controlBar: {
         children: [
           "playToggle","currentTimeDisplay","progressControl",
@@ -44,33 +46,60 @@
     });
     player.src({ src: url, type: "application/x-mpegURL" });
 
+    // tombol custom prev/next
     const Btn = videojs.getComponent('Button');
     class PrevBtn extends Btn { handleClick(){ loadEpisode(currentIndex - 1); } }
     class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex + 1); } }
     videojs.registerComponent('PrevBtn', PrevBtn);
     videojs.registerComponent('NextBtn', NextBtn);
+
     player.ready(() => {
       const bar = player.getChild('controlBar');
-      bar.addChild('PrevBtn', { controlText: 'Prev' }, bar.children().length - 1);
-      bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
+      if (currentIndex > 1) {
+        bar.addChild('PrevBtn', { controlText: 'Prev' }, bar.children().length - 1);
+      }
+      if (currentIndex < episodes.length) {
+        bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
+      }
+    });
+
+    // 🎯 auto-next episode saat video selesai
+    player.on("ended", () => {
+      if (currentIndex < episodes.length) {
+        loadEpisode(currentIndex + 1);
+      }
     });
   }
 
+  // 🔎 ambil url episode
   function episodeUrl(i) {
     const ep = episodes.find(e => e.index === i);
     return ep?.cdnList?.[0]?.url || null;
   }
 
+  // ⏩ ganti episode
   function loadEpisode(i) {
+    if (i < 1 || i > episodes.length) return;
     const url = episodeUrl(i);
     if (!url) return;
     currentIndex = i;
     initPlayer(url);
     history.replaceState({}, "", `/watch/<%= bookId %>/${i}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // update highlight
+    document.querySelectorAll(".row .card").forEach(c => c.classList.remove("active"));
+    const activeCard = document.querySelector(`.row .card:nth-child(${i})`);
+    if (activeCard) activeCard.classList.add("active");
   }
 
   function trackAdClick(){ fetch("/track/ad-click",{ method:"POST" }); }
 
+  // 🚀 jalankan pertama kali
   loadEpisode(currentIndex);
 </script>
+
+<style>
+  .card.active { outline: 2px solid #e50914; }
+  .ep-badge { background: rgba(0,0,0,.6); color:#fff; text-align:center; font-size:12px; }
+</style>
