@@ -14,9 +14,7 @@ async function loadPage() {
       const a = document.createElement("a");
       a.className = "item";
       a.href = `/detail/${item.bookId || item.id}`;
-      a.innerHTML = `<img src="/img?url=${encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '')}&w=50"
-                        data-src="/img?url=${encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '')}"
-                        class="lazy blur"/>`;
+      a.innerHTML = `<img src="/img?url=${encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || '')}" class="lazy blur"/>`;
       grid.appendChild(a);
     });
     page++;
