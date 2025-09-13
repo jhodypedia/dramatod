@@ -1,21 +1,16 @@
-(function(){
-  let io;
-  function init() {
-    const imgs = document.querySelectorAll("img.lazy.blur");
-    if (io) io.disconnect();
-    io = new IntersectionObserver((entries, obs)=>{
-      entries.forEach(entry=>{
-        if(entry.isIntersecting){
-          const img = entry.target;
-          const src = img.getAttribute("data-src");
-          if (src) img.src = src;
-          img.onload = () => img.classList.remove("blur");
-          obs.unobserve(img);
-        }
-      });
-    }, { rootMargin: "200px" });
-    imgs.forEach(img=>io.observe(img));
-  }
-  document.addEventListener("DOMContentLoaded", init);
-  window.reinitLazy = init;
-})();
+function bindLazy(){
+  const imgs = document.querySelectorAll("img.lazy");
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const img = e.target;
+        const ds = img.getAttribute("data-src");
+        if(ds){ img.src = ds; img.onload = ()=> img.classList.remove("blur"); }
+        io.unobserve(img);
+      }
+    })
+  }, { rootMargin: "200px" });
+  imgs.forEach(i=>io.observe(i));
+}
+window.addEventListener("DOMContentLoaded", bindLazy);
+window.addEventListener("lazy-refresh", bindLazy);
