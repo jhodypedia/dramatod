@@ -19,7 +19,7 @@ const baseHeaders = (tk) => ({
   "time-zone": "+0800"
 });
 
-// 🔎 search
+// 🔎 search drama
 export async function searchDrama(keyword) {
   if (!keyword) return [];
   const tk = await getToken();
@@ -31,7 +31,8 @@ export async function searchDrama(keyword) {
 // 📺 list drama (theater)
 export async function theaterList(page = 1, channelId = 43) {
   const key = `theater:${channelId}:${page}`;
-  const cached = getCache(key); if (cached) return cached;
+  const cached = getCache(key); 
+  if (cached) return cached;
 
   const tk = await getToken();
   const url = "https://sapi.dramaboxdb.com/drama-box/he001/theater";
@@ -63,8 +64,15 @@ export async function chapterList(bookId, index = 1) {
   return data?.data?.chapterList || [];
 }
 
-// ambil link stream (.m3u8)
-export function pickStreamUrl(chapter, cdnIndex = 0) {
-  const cdn = chapter?.cdnList?.[cdnIndex];
-  return cdn?.url || null;
+// 🎥 ambil link stream sesuai kualitas
+export function pickStreamUrl(chapter, quality = 720) {
+  if (!chapter?.cdnList?.length) return null;
+
+  for (const cdn of chapter.cdnList) {
+    const video = cdn.videoPathList.find(v => v.quality === quality);
+    if (video) return video.videoPath;
+  }
+
+  // fallback: ambil kualitas pertama yang tersedia
+  return chapter.cdnList[0].videoPathList?.[0]?.videoPath || null;
 }
