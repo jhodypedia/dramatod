@@ -13,18 +13,39 @@
 </div>
 
 <h2 class="title">Daftar Episode</h2>
-<div class="episode-list">
-  <% (chapters || []).forEach(ch => { %>
-    <a class="episode" href="/watch/<%= bookId %>/<%= ch.index %>">
-      <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>&w=50"
-           data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
-           class="lazy blur" alt="episode"/>
-      <div class="ep-meta">
-        <span>Episode <%= ch.index %></span>
-        <span class="muted"><%= ch.chapterName || '' %></span>
-      </div>
-    </a>
-  <% }) %>
-</div>
+<div id="episode-list" class="episode-list"></div>
+<button id="loadMore" class="btn">Load More</button>
 
-<script src="/public/js/lazyload.js"></script>
+<script>
+  const chapters = <%- JSON.stringify(chapters) %>;
+  let perPage = 20;
+  let currentPage = 1;
+
+  function renderEpisodes() {
+    const container = document.getElementById("episode-list");
+    container.innerHTML = "";
+    const end = perPage * currentPage;
+    const list = chapters.slice(0, end);
+    list.forEach(ch => {
+      const a = document.createElement("a");
+      a.className = "episode";
+      a.href = `/watch/<%= bookId %>/${ch.index}`;
+      a.innerHTML = `
+        <img src="/img?url=${encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '')}" class="lazy blur"/>
+        <div class="ep-meta">
+          <span>Episode ${ch.index}</span>
+          <span class="muted">${ch.chapterName || ''}</span>
+        </div>
+      `;
+      container.appendChild(a);
+    });
+    if (end >= chapters.length) document.getElementById("loadMore").style.display = "none";
+  }
+
+  document.getElementById("loadMore").addEventListener("click", () => {
+    currentPage++;
+    renderEpisodes();
+  });
+
+  renderEpisodes();
+</script>
