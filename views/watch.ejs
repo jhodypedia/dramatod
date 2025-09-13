@@ -1,13 +1,13 @@
 <div class="video-container">
   <video id="player" class="video-js vjs-big-play-centered" controls playsinline></video>
-  <% if (settings.adsPlayerOverlayHtml) { %>
-    <div class="ad-overlay" onclick="trackAdClick()">
-      <%- settings.adsPlayerOverlayHtml %>
-    </div>
-  <% } %>
 </div>
 
-<!-- Pilihan kualitas -->
+<% if (settings.adsenseCode) { %>
+  <div class="adsense" style="margin:15px 0;">
+    <%- settings.adsenseCode %>
+  </div>
+<% } %>
+
 <div class="quality-select">
   <label>Kualitas:</label>
   <select id="quality" onchange="reloadQuality(this.value)">
@@ -25,58 +25,33 @@
 
 <link href="https://cdn.jsdelivr.net/npm/video.js@8/dist/video-js.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/video.js@8/dist/video.min.js"></script>
-<script src="/public/js/lazyload.js"></script>
 
 <script>
-  const episodes = <%- JSON.stringify(chapters) %>;
+  const bookId = "<%= bookId %>";
   let currentIndex = <%= index %>;
   let player;
   let currentQuality = 720;
-  let perPage = 20;
-  let currentPage = 1;
+  let pageEp = 1;
 
   function initPlayer(url) {
     if (player) player.dispose();
     player = videojs("player", { fluid: true, autoplay: true, preload: "auto" });
     player.src({ src: url, type: "application/x-mpegURL" });
-
-    const Btn = videojs.getComponent('Button');
-    class PrevBtn extends Btn { handleClick(){ loadEpisode(currentIndex - 1); } }
-    class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex + 1); } }
-    videojs.registerComponent('PrevBtn', PrevBtn);
-    videojs.registerComponent('NextBtn', NextBtn);
-
-    player.ready(() => {
-      const bar = player.getChild('controlBar');
-      if (currentIndex > 1) bar.addChild('PrevBtn', { controlText: 'Prev' }, bar.children().length - 1);
-      if (currentIndex < episodes.length) bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
-    });
-
-    player.on("ended", () => { if (currentIndex < episodes.length) loadEpisode(currentIndex + 1); });
   }
 
-  function episodeUrl(i, quality = 720) {
-    const ep = episodes.find(e => e.index === i);
-    if (!ep?.cdnList?.length) return null;
-    for (const cdn of ep.cdnList) {
-      const video = cdn.videoPathList.find(v => v.quality == quality);
-      if (video) return video.videoPath;
+  async function loadEpisode(i) {
+    const res = await fetch(`/api/chapters/${bookId}?page=${Math.ceil(i/20)}`);
+    const data = await res.json();
+    const ep = data.list.find(e => (e.index || e.chapterIndex) === i);
+    if (!ep) return;
+
+    const video = ep.cdnList?.[0]?.videoPathList?.find(v => v.quality == currentQuality) 
+               || ep.cdnList?.[0]?.videoPathList?.[0];
+    if (video) {
+      currentIndex = i;
+      initPlayer(video.videoPath);
+      history.replaceState({}, "", `/watch/${bookId}/${i}`);
     }
-    return ep.cdnList[0].videoPathList?.[0]?.videoPath || null;
-  }
-
-  function loadEpisode(i) {
-    if (i < 1 || i > episodes.length) return;
-    const url = episodeUrl(i, currentQuality);
-    if (!url) return;
-    currentIndex = i;
-    initPlayer(url);
-    history.replaceState({}, "", `/watch/<%= bookId %>/${i}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    document.querySelectorAll("#episode-scroll .card").forEach(c => c.classList.remove("active"));
-    const activeCard = document.querySelector(`#episode-scroll .card[data-index="${i}"]`);
-    if (activeCard) activeCard.classList.add("active");
   }
 
   function reloadQuality(q) {
@@ -84,35 +59,31 @@
     loadEpisode(currentIndex);
   }
 
-  function renderEpisodes() {
+  async function loadEpisodeList() {
+    const res = await fetch(`/api/chapters/${bookId}?page=${pageEp}`);
+    const data = await res.json();
+    const list = data.list || [];
     const container = document.getElementById("episode-scroll");
-    const end = perPage * currentPage;
-    const list = episodes.slice(0, end);
-    container.innerHTML = "";
+
     list.forEach(ch => {
+      const epIndex = ch.index || ch.chapterIndex || 0;
+      const cover = ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '';
       const div = document.createElement("div");
-      div.className = `card ${ch.index === currentIndex ? 'active' : ''}`;
-      div.dataset.index = ch.index;
-      div.onclick = () => loadEpisode(ch.index);
+      div.className = `card ${epIndex === currentIndex ? 'active' : ''}`;
+      div.onclick = () => loadEpisode(epIndex);
       div.innerHTML = `
-        <img src="/img?url=${encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '')}"
-             class="lazy blur" alt="ep"/>
-        <div class="ep-badge">Ep ${ch.index}</div>
+        <img src="/img?url=${encodeURIComponent(cover)}" class="lazy blur" alt="ep"/>
+        <div class="ep-badge">Ep ${epIndex}</div>
       `;
       container.appendChild(div);
     });
-    if (end >= episodes.length) document.getElementById("loadMoreEp").style.display = "none";
+
+    if (!list.length) document.getElementById("loadMoreEp").style.display = "none";
+    pageEp++;
   }
 
-  document.getElementById("loadMoreEp").addEventListener("click", () => {
-    currentPage++;
-    renderEpisodes();
-  });
-
-  function trackAdClick(){ fetch("/track/ad-click",{ method:"POST" }); }
-
-  // start
-  renderEpisodes();
+  document.getElementById("loadMoreEp").addEventListener("click", loadEpisodeList);
+  loadEpisodeList();
   loadEpisode(currentIndex);
 </script>
 
