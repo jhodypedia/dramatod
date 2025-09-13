@@ -1,68 +1,43 @@
 <% if (hero) { %>
-<section class="hero">
-  <img src="/img?url=<%= encodeURIComponent(
-      hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || ''
-  ) %>&w=50"
-       data-src="/img?url=<%= encodeURIComponent(
-      hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || ''
-  ) %>"
+<section class="hero reveal">
+  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || '') %>&w=50"
+       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || '') %>"
        class="lazy blur" alt="hero"/>
-  <div class="overlay"></div>
+  <div class="gradient"></div>
   <div class="content">
-    <h1><%= (hero.title || hero.bookName || 'Drama Pilihan') %></h1>
-    <p><%= hero.introduction ? hero.introduction.substring(0,150) + "..." : "" %></p>
-    <a href="/detail/<%= hero.bookId || hero.id %>" class="btn">Tonton Sekarang</a>
+    <h1 class="title-hero"><%= hero.title || hero.bookName || 'Drama Pilihan' %></h1>
+    <p class="muted clamp-3"><%= hero.introduction || '' %></p>
+    <a href="/detail/<%= hero.bookId || hero.id %>" class="btn primary">Tonton Sekarang</a>
   </div>
 </section>
 <% } %>
 
-<% if (settings.adsenseCode) { %>
-  <div class="adsense">
-    <%- settings.adsenseCode %>
-  </div>
-<% } %>
-
 <% (rows || []).forEach(row => { %>
-<section class="row">
+<section class="row reveal">
   <h2><%= row.title %></h2>
-  <div class="scroll">
-    <% (row.items || []).forEach(item => { %>
-      <div class="card">
-        <a href="/detail/<%= item.bookId || item.id %>">
-          <img src="/img?url=<%= encodeURIComponent(
-              item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || ''
-          ) %>&w=50"
-               data-src="/img?url=<%= encodeURIComponent(
-              item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || ''
-          ) %>"
-               class="lazy blur" alt="cover"/>
-          <div class="meta">
-            <span class="title"><%= item.title || item.bookName %></span>
-            <span class="plays"><%= item.playCount || '' %></span>
-          </div>
-        </a>
-      </div>
+  <div class="scrollcards">
+    <% (row.items || []).forEach(item => { const cover = (item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || ''); %>
+      <a class="card hover3d" href="/detail/<%= item.bookId || item.id %>">
+        <div class="thumb shimmer">
+          <img src="/img?url=<%= encodeURIComponent(cover) %>&w=50" data-src="/img?url=<%= encodeURIComponent(cover) %>" class="lazy blur" alt="cover"/>
+        </div>
+        <div class="meta">
+          <div class="name clamp-1"><%= item.title || item.bookName || '' %></div>
+          <div class="muted"><%= item.playCount || '' %></div>
+        </div>
+      </a>
     <% }) %>
   </div>
 </section>
 <% }) %>
 
-<section class="row">
+<section class="row reveal">
   <h2>Semua Drama</h2>
   <div id="grid" class="grid"></div>
   <div id="loader" class="grid">
-    <% for (let i=0;i<12;i++){ %>
-      <div class="item skeleton" style="height:260px;border-radius:12px"></div>
-    <% } %>
+    <% for (let i=0;i<12;i++){ %><div class="item skeleton shimmer" style="height:260px;border-radius:14px"></div><% } %>
   </div>
 </section>
 
-<% if (settings.adsenseCode) { %>
-  <div class="adsense">
-    <%- settings.adsenseCode %>
-  </div>
-<% } %>
-
 <script src="/public/js/infinite.js"></script>
-<script src="/public/js/lazyload.js"></script>
 <script> window.__START_PAGE__ = <%= Number(page || 1) %>; </script>
