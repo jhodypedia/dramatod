@@ -1,9 +1,29 @@
+<div class="detail-header">
+  <img class="poster"
+       src="/img?url=<%= encodeURIComponent(chapters[0]?.cover || chapters[0]?.coverImg || chapters[0]?.hCover || chapters[0]?.hSmallCover || chapters[0]?.verticalCover || chapters[0]?.coverWap || '') %>"
+       alt="poster"/>
+  <div class="info">
+    <h1><%= chapters[0]?.bookName || 'Drama' %></h1>
+    <% if (chapters[0]?.introduction) { %>
+      <p class="intro"><%= chapters[0].introduction %></p>
+    <% } %>
+    <% if (chapters[0]?.tags?.length) { %>
+      <div class="tags">
+        <% chapters[0].tags.forEach(tag => { %>
+          <span class="tag"><%= tag %></span>
+        <% }) %>
+      </div>
+    <% } %>
+    <a href="/watch/<%= bookId %>/1" class="btn">Tonton Episode 1</a>
+  </div>
+</div>
+
 <h2 class="title">Daftar Episode</h2>
 <div class="episode-list">
   <% (chapters || []).forEach(ch => { %>
     <a class="episode" href="/watch/<%= bookId %>/<%= ch.index %>">
-      <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>&w=50"
-           data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>"
+      <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>&w=50"
+           data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
            class="lazy blur" alt="episode"/>
       Episode <%= ch.index %>
       <span class="muted"><%= ch.chapterName || '' %></span>
