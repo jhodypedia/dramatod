@@ -1,0 +1,21 @@
+<div class="card-settings">
+  <h2>Pengaturan</h2>
+  <form method="post" action="/admin/settings" class="form">
+    <label>Nama Situs</label>
+    <input name="siteName" value="<%= s.siteName || '' %>" />
+    <label>Logo URL</label>
+    <input name="logoUrl" value="<%= s.logoUrl || '' %>" />
+    <label>Tema</label>
+    <select name="theme">
+      <option value="dark" <%= s.theme === 'dark' ? 'selected' : '' %>>Dark</option>
+      <option value="light" <%= s.theme === 'light' ? 'selected' : '' %>>Light</option>
+    </select>
+    <label>Ads Head Script (HTML/JS)</label>
+    <textarea name="adsHeadScript" rows="5"><%= s.adsHeadScript || '' %></textarea>
+    <label>Ads Body Top (HTML/JS)</label>
+    <textarea name="adsBodyTop" rows="5"><%= s.adsBodyTop || '' %></textarea>
+    <label>Player Overlay HTML</label>
+    <textarea name="adsPlayerOverlayHtml" rows="5"><%= s.adsPlayerOverlayHtml || '' %></textarea>
+    <button class="btn">Simpan</button>
+  </form>
+</div>
