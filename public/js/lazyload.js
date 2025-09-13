@@ -13,9 +13,9 @@
           obs.unobserve(img);
         }
       });
-    }, { rootMargin: "200px 0px" });
+    }, { rootMargin: "200px" });
     imgs.forEach(img=>io.observe(img));
   }
   document.addEventListener("DOMContentLoaded", init);
-  window.reinitLazy = init; // untuk dipanggil setelah infinite append
+  window.reinitLazy = init;
 })();
