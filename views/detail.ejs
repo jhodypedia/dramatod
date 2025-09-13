@@ -1,57 +1,35 @@
-<div class="detail-info">
-  <h1><%= bookId %></h1>
-</div>
-
-<% if (settings.adsenseCode) { %>
-  <div class="adsense">
-    <%- settings.adsenseCode %>
-  </div>
-<% } %>
-
-<h2 class="title">Daftar Episode</h2>
-<div id="episode-list" class="episode-list"></div>
-<button id="loadMore" class="btn">Load More</button>
+<section class="reveal">
+  <h1>Daftar Episode</h1>
+  <div id="episode-list" class="episode-list"></div>
+  <button id="loadMore" class="btn ghost">Muat Lagi</button>
+</section>
 
 <script>
-  const bookId = "<%= bookId %>";
-  let page = 1;
-  let loading = false;
-
-  async function loadEpisodes() {
-    if (loading) return;
-    loading = true;
-
+  const bookId = "<%= bookId %>"; let page = 1, loading=false;
+  async function loadEpisodes(){
+    if(loading) return; loading = true;
     const res = await fetch(`/api/chapters/${bookId}?page=${page}`);
-    const data = await res.json();
-    const list = data.list || [];
+    const { list=[] } = await res.json();
 
-    const container = document.getElementById("episode-list");
-    list.forEach(ch => {
-      const epIndex = ch.index || ch.chapterIndex || 0;
+    const c = document.getElementById("episode-list");
+    list.forEach(ch=>{
+      const epIndex = ch.index || ch.chapterIndex || 1;
       const epName = ch.chapterName || ch.title || ("EP " + epIndex);
       const cover = ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '';
 
-      const a = document.createElement("a");
-      a.className = "episode";
-      a.href = `/watch/${bookId}/${epIndex}`;
+      const a = document.createElement('a'); a.className="episode hoverlift";
+      a.href=`/watch/${bookId}/${epIndex}`;
       a.innerHTML = `
-        <img src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"/>
-        <div class="ep-meta">
-          <span>Episode ${epIndex}</span>
-          <span class="muted">${epName}</span>
-        </div>
+        <img src="/img?url=${encodeURIComponent(cover)}&w=50" data-src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"/>
+        <div><strong>Episode ${epIndex}</strong><div class="muted clamp-1">${epName}</div></div>
       `;
-      container.appendChild(a);
+      c.appendChild(a);
     });
 
-    if (!list.length) {
-      document.getElementById("loadMore").style.display = "none";
-    }
-
-    page++;
-    loading = false;
+    if(!list.length) document.getElementById("loadMore").style.display="none";
+    page++; loading=false;
+    window.dispatchEvent(new Event("lazy-refresh"));
   }
-
   document.getElementById("loadMore").addEventListener("click", loadEpisodes);
   loadEpisodes();
 </script>
