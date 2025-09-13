@@ -19,7 +19,7 @@ const baseHeaders = (tk) => ({
   "time-zone": "+0800"
 });
 
-// 🔎 search drama
+// 🔍 search drama
 export async function searchDrama(keyword) {
   if (!keyword) return [];
   const tk = await getToken();
@@ -31,7 +31,7 @@ export async function searchDrama(keyword) {
 // 📺 list drama (theater)
 export async function theaterList(page = 1, channelId = 43) {
   const key = `theater:${channelId}:${page}`;
-  const cached = getCache(key); 
+  const cached = getCache(key);
   if (cached) return cached;
 
   const tk = await getToken();
@@ -39,11 +39,11 @@ export async function theaterList(page = 1, channelId = 43) {
   const body = { newChannelStyle: 1, isNeedRank: 1, pageNo: page, index: 1, channelId };
   const { data } = await axios.post(url, body, { headers: baseHeaders(tk) });
   const records = data?.data?.newTheaterList?.records || [];
-  setCache(key, records);
+  setCache(key, records, 60 * 5);
   return records;
 }
 
-// 🎬 daftar episode (chapter list)
+// 🎬 ambil semua episode sekaligus
 export async function chapterList(bookId, index = 1) {
   const tk = await getToken();
   const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load";
@@ -64,15 +64,27 @@ export async function chapterList(bookId, index = 1) {
   return data?.data?.chapterList || [];
 }
 
+// 🎬 ambil episode per page (realtime + cache)
+export async function chapterPage(bookId, page = 1, perPage = 20) {
+  const key = `chapters:${bookId}:${page}:${perPage}`;
+  const cached = getCache(key);
+  if (cached) return cached;
+
+  const all = await chapterList(bookId, 1);
+  const start = (page - 1) * perPage;
+  const end = page * perPage;
+  const result = all.slice(start, end);
+
+  setCache(key, result, 60 * 5); // cache 5 menit
+  return result;
+}
+
 // 🎥 ambil link stream sesuai kualitas
 export function pickStreamUrl(chapter, quality = 720) {
   if (!chapter?.cdnList?.length) return null;
-
   for (const cdn of chapter.cdnList) {
     const video = cdn.videoPathList.find(v => v.quality === quality);
     if (video) return video.videoPath;
   }
-
-  // fallback: ambil kualitas pertama yang tersedia
   return chapter.cdnList[0].videoPathList?.[0]?.videoPath || null;
 }
