@@ -19,16 +19,8 @@
 
 <div class="row">
   <h2>Pilih Episode</h2>
-  <div class="scroll">
-    <% (chapters || []).forEach(ch => { %>
-      <div class="card <%= ch.index === index ? 'active' : '' %>" onclick="loadEpisode(<%= ch.index %>)">
-        <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>&w=50"
-             data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
-             class="lazy blur" alt="ep"/>
-        <div class="ep-badge">Ep <%= ch.index %></div>
-      </div>
-    <% }) %>
-  </div>
+  <div id="episode-scroll" class="scroll"></div>
+  <button id="loadMoreEp" class="btn">Load More</button>
 </div>
 
 <link href="https://cdn.jsdelivr.net/npm/video.js@8/dist/video-js.min.css" rel="stylesheet"/>
@@ -40,6 +32,8 @@
   let currentIndex = <%= index %>;
   let player;
   let currentQuality = 720;
+  let perPage = 20;
+  let currentPage = 1;
 
   function initPlayer(url) {
     if (player) player.dispose();
@@ -80,8 +74,8 @@
     history.replaceState({}, "", `/watch/<%= bookId %>/${i}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    document.querySelectorAll(".row .card").forEach(c => c.classList.remove("active"));
-    const activeCard = document.querySelector(`.row .card:nth-child(${i})`);
+    document.querySelectorAll("#episode-scroll .card").forEach(c => c.classList.remove("active"));
+    const activeCard = document.querySelector(`#episode-scroll .card[data-index="${i}"]`);
     if (activeCard) activeCard.classList.add("active");
   }
 
@@ -90,8 +84,35 @@
     loadEpisode(currentIndex);
   }
 
+  function renderEpisodes() {
+    const container = document.getElementById("episode-scroll");
+    const end = perPage * currentPage;
+    const list = episodes.slice(0, end);
+    container.innerHTML = "";
+    list.forEach(ch => {
+      const div = document.createElement("div");
+      div.className = `card ${ch.index === currentIndex ? 'active' : ''}`;
+      div.dataset.index = ch.index;
+      div.onclick = () => loadEpisode(ch.index);
+      div.innerHTML = `
+        <img src="/img?url=${encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '')}"
+             class="lazy blur" alt="ep"/>
+        <div class="ep-badge">Ep ${ch.index}</div>
+      `;
+      container.appendChild(div);
+    });
+    if (end >= episodes.length) document.getElementById("loadMoreEp").style.display = "none";
+  }
+
+  document.getElementById("loadMoreEp").addEventListener("click", () => {
+    currentPage++;
+    renderEpisodes();
+  });
+
   function trackAdClick(){ fetch("/track/ad-click",{ method:"POST" }); }
 
+  // start
+  renderEpisodes();
   loadEpisode(currentIndex);
 </script>
 
