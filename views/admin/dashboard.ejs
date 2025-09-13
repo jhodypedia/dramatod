@@ -1,0 +1,35 @@
+<div class="dashboard">
+  <h2>Statistik</h2>
+  <div class="stats-cards">
+    <div class="card"><div class="label">Pengunjung Hari Ini</div><div class="value"><%= today.visitors %></div></div>
+    <div class="card"><div class="label">Pageviews Hari Ini</div><div class="value"><%= today.pageviews %></div></div>
+    <div class="card"><div class="label">Klik Iklan Hari Ini</div><div class="value"><%= today.adClicks %></div></div>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="statsChart" height="100"></canvas>
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById("statsChart");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: <%- JSON.stringify(labels) %>,
+      datasets: [
+        { label: "Visitors",  data: <%- JSON.stringify(visitors) %>,  borderColor:"#ef4444", backgroundColor:"transparent" },
+        { label: "Pageviews", data: <%- JSON.stringify(pageviews) %>, borderColor:"#3b82f6", backgroundColor:"transparent" },
+        { label: "Ad Clicks", data: <%- JSON.stringify(adClicks) %>, borderColor:"#10b981", backgroundColor:"transparent" }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: "#fff" } } },
+      scales: {
+        x: { ticks: { color: "#ddd" }, grid: { color: "rgba(255,255,255,.08)" } },
+        y: { ticks: { color: "#ddd" }, grid: { color: "rgba(255,255,255,.08)" } }
+      }
+    }
+  });
+</script>
