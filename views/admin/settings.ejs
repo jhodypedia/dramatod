@@ -1,21 +1,17 @@
-<div class="card-settings">
-  <h2>Pengaturan</h2>
-  <form method="post" action="/admin/settings" class="form">
-    <label>Nama Situs</label>
-    <input name="siteName" value="<%= s.siteName || '' %>" />
-    <label>Logo URL</label>
-    <input name="logoUrl" value="<%= s.logoUrl || '' %>" />
-    <label>Tema</label>
-    <select name="theme">
-      <option value="dark" <%= s.theme === 'dark' ? 'selected' : '' %>>Dark</option>
-      <option value="light" <%= s.theme === 'light' ? 'selected' : '' %>>Light</option>
-    </select>
-    <label>Ads Head Script (HTML/JS)</label>
-    <textarea name="adsHeadScript" rows="5"><%= s.adsHeadScript || '' %></textarea>
-    <label>Ads Body Top (HTML/JS)</label>
-    <textarea name="adsBodyTop" rows="5"><%= s.adsBodyTop || '' %></textarea>
-    <label>Player Overlay HTML</label>
-    <textarea name="adsPlayerOverlayHtml" rows="5"><%= s.adsPlayerOverlayHtml || '' %></textarea>
-    <button class="btn">Simpan</button>
+<section class="reveal">
+  <h1>Pengaturan</h1>
+  <form method="post" class="form grid2">
+    <label>Nama Situs<input name="siteName" value="<%= s.siteName||'' %>"/></label>
+    <label>Logo URL<input name="logoUrl" value="<%= s.logoUrl||'' %>"/></label>
+    <label>Tema
+      <select name="theme">
+        <option value="dark" <%= s.theme==='dark'?'selected':'' %>>Dark</option>
+        <option value="light" <%= s.theme==='light'?'selected':'' %>>Light</option>
+      </select>
+    </label>
+    <label>AdSense Head Script<textarea name="adsHeadScript"><%= s.adsHeadScript||'' %></textarea></label>
+    <label>Ads Body Top<textarea name="adsBodyTop"><%= s.adsBodyTop||'' %></textarea></label>
+    <label>Ads Overlay Player (HTML)<textarea name="adsPlayerOverlayHtml"><%= s.adsPlayerOverlayHtml||'' %></textarea></label>
+    <button class="btn primary">Simpan</button>
   </form>
-</div>
+</section>
