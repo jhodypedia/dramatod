@@ -5,14 +5,25 @@ import { Admin, Settings, Stats } from "../models/index.js";
 
 const r = Router();
 
-r.get("/login", (req, res) => res.renderPartial("admin/login", { title: "Admin Login" }));
+// 🔑 Login
+r.get("/login", (req, res) => 
+  res.renderPartial("admin/login", { title: "Admin Login" })
+);
 
 r.post("/login", async (req, res) => {
   const { username, password } = req.body;
   const admin = await Admin.findOne({ where: { username } });
-  if (!admin) return res.renderPartial("admin/login", { title: "Admin Login", error: "User tidak ditemukan" });
+  if (!admin) {
+    return res.renderPartial("admin/login", { 
+      title: "Admin Login", error: "User tidak ditemukan" 
+    });
+  }
   const ok = await bcrypt.compare(password, admin.passwordHash);
-  if (!ok) return res.renderPartial("admin/login", { title: "Admin Login", error: "Password salah" });
+  if (!ok) {
+    return res.renderPartial("admin/login", { 
+      title: "Admin Login", error: "Password salah" 
+    });
+  }
   req.session.admin = { id: admin.id, username: admin.username };
   res.redirect(req.query.next || "/admin");
 });
@@ -22,9 +33,12 @@ r.get("/logout", (req, res) => {
   res.redirect("/admin/login");
 });
 
+// 📊 Dashboard
 r.get("/", requireAdmin, async (req, res) => {
   const todayStr = new Date().toISOString().split("T")[0];
-  const today = await Stats.findOne({ where: { date: todayStr } }) || { visitors:0, pageviews:0, adClicks:0 };
+  const today = await Stats.findOne({ where: { date: todayStr } }) || { 
+    visitors:0, pageviews:0, adClicks:0 
+  };
 
   const last7 = await Stats.findAll({ order: [["date","ASC"]], limit: 7 });
   const labels = last7.map(r => r.date);
@@ -32,19 +46,26 @@ r.get("/", requireAdmin, async (req, res) => {
   const pageviews = last7.map(r => r.pageviews);
   const adClicks = last7.map(r => r.adClicks);
 
+  const s = await Settings.findByPk(1);
+
   res.renderPartial("admin/dashboard", {
     title: "Dashboard Admin",
-    today, labels, visitors, pageviews, adClicks
+    today, labels, visitors, pageviews, adClicks,
+    s: s?.toJSON() || {}
   });
 });
 
+// ⚙️ Settings
 r.get("/settings", requireAdmin, async (req, res) => {
   const s = await Settings.findByPk(1);
-  res.renderPartial("admin/settings", { title: "Pengaturan", s: s?.toJSON() || {} });
+  res.renderPartial("admin/settings", { 
+    title: "Pengaturan", 
+    s: s?.toJSON() || {} 
+  });
 });
 
 r.post("/settings", requireAdmin, async (req, res) => {
-  const s = await Settings.findByPk(1);
+  let s = await Settings.findByPk(1);
   const payload = {
     siteName: req.body.siteName,
     logoUrl: req.body.logoUrl,
