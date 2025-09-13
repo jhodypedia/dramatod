@@ -1,19 +1,21 @@
 import { Router } from "express";
 import axios from "axios";
 import xss from "xss";
-import { theaterList, searchDrama, chapterList, pickStreamUrl } from "../utils/dramabox.js";
-import { Stats } from "../models/index.js";
+import { theaterList, searchDrama, chapterList, chapterPage, pickStreamUrl } from "../utils/dramabox.js";
+import { Stats, Settings } from "../models/index.js";
 
 const r = Router();
 
 // 🏠 Homepage
 r.get("/", async (req, res) => {
   const trending = await theaterList(1, 43);
+  const settings = await Settings.findOne() || {};
   res.renderPartial("index", {
     title: "Beranda",
     hero: trending[0] || null,
     rows: [{ title: "Trending", slug: "trending", items: trending }],
-    page: 1
+    page: 1,
+    settings
   });
 });
 
@@ -22,31 +24,34 @@ r.get("/search", async (req, res) => {
   const q = (req.query.q || "").toString().slice(0, 64);
   const keyword = xss(q);
   const list = keyword ? await searchDrama(keyword) : [];
+  const settings = await Settings.findOne() || {};
   res.renderPartial("index", {
     title: keyword ? `Cari: ${keyword}` : "Cari",
     hero: list[0] || null,
     rows: [{ title: `Hasil untuk: ${keyword}`, slug: "search", items: list }],
     page: 1,
-    keyword
+    keyword,
+    settings
   });
 });
 
-// 📑 Detail (list episode)
+// 📑 Detail drama
 r.get("/detail/:bookId", async (req, res) => {
   const bookId = req.params.bookId;
-  const chapters = await chapterList(bookId, 1);
-  res.renderPartial("detail", { title: "Detail", bookId, chapters });
+  const settings = await Settings.findOne() || {};
+  res.renderPartial("detail", { title: "Detail", bookId, chapters: [], settings });
 });
 
-// 🎬 Watch (stream episode)
+// 🎬 Watch episode
 r.get("/watch/:bookId/:index", async (req, res) => {
   const bookId = req.params.bookId;
   const index = parseInt(req.params.index || "1", 10);
-  const quality = parseInt(req.query.q || "720", 10); // default kualitas 720p
+  const quality = parseInt(req.query.q || "720", 10);
 
   const chapters = await chapterList(bookId, index);
-  const chapter = chapters.find(c => c.index === index) || chapters[0];
+  const chapter = chapters.find(c => c.index === index || c.chapterIndex === index) || chapters[0];
   const streamUrl = pickStreamUrl(chapter, quality);
+  const settings = await Settings.findOne() || {};
 
   res.renderPartial("watch", {
     title: `Episode ${index}`,
@@ -54,23 +59,26 @@ r.get("/watch/:bookId/:index", async (req, res) => {
     index,
     streamUrl,
     chapter,
-    chapters
+    chapters: [],
+    settings
   });
 });
 
-// 🔀 Fallback: kalau cuma bookId → redirect ke episode 1
+// fallback redirect
 r.get("/watch/:bookId", (req, res) => {
   res.redirect(`/watch/${req.params.bookId}/1`);
 });
 
-// 📦 API theater (untuk infinite scroll grid)
-r.get("/api/theater", async (req, res) => {
+// 📦 API episodes (realtime pagination)
+r.get("/api/chapters/:bookId", async (req, res) => {
+  const bookId = req.params.bookId;
   const page = parseInt(req.query.page || "1", 10);
-  const list = await theaterList(page, 43);
-  res.json({ page, list });
+  const perPage = parseInt(req.query.perPage || "20", 10);
+  const list = await chapterPage(bookId, page, perPage);
+  res.json({ page, perPage, list });
 });
 
-// 🖼️ Proxy gambar (supaya thumbnail tampil)
+// 🖼️ Proxy image
 r.get("/img", async (req, res) => {
   try {
     const raw = req.query.url || "";
@@ -85,7 +93,7 @@ r.get("/img", async (req, res) => {
   }
 });
 
-// 📊 Track klik iklan
+// 📊 Track iklan
 r.post("/track/ad-click", async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
   let row = await Stats.findOne({ where: { date: today } });
@@ -93,6 +101,21 @@ r.post("/track/ad-click", async (req, res) => {
   row.adClicks++;
   await row.save();
   res.json({ ok: true });
+});
+
+// ⚙️ Admin Panel untuk Settings
+r.get("/admin/settings", async (req, res) => {
+  const settings = await Settings.findOne() || {};
+  res.renderPartial("admin/settings", { title: "Settings", settings });
+});
+
+r.post("/admin/settings", async (req, res) => {
+  let settings = await Settings.findOne();
+  if (!settings) settings = await Settings.create({});
+  settings.siteName = req.body.siteName || "DramaBox";
+  settings.adsenseCode = req.body.adsenseCode || "";
+  await settings.save();
+  res.redirect("/admin/settings");
 });
 
 export default r;
