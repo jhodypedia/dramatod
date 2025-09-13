@@ -3,30 +3,41 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title><%= title ? `${title} — ` : "" %><%= (s?.siteName || 'DramaTOD') %></title>
+  <title><%= title ? `${title} — ` : "" %><%= (settings?.siteName || 'DramaTOD') %></title>
   <link rel="stylesheet" href="/public/css/style.css"/>
-  <% if (s?.adsHeadScript) { %><%- s.adsHeadScript %><% } %>
+  <% if (settings?.adsHeadScript) { %><%- settings.adsHeadScript %><% } %>
 </head>
-<body class="theme-<%= s?.theme || 'dark' %> fade-in">
+<body class="theme-<%= settings?.theme || 'dark' %> fade-in">
   <header class="nav glass">
-    <a class="brand" href="/"><img src="<%= s?.logoUrl || '/public/logo.svg' %>" alt="logo"/><span><%= s?.siteName || 'DramaTOD' %></span></a>
+    <a class="brand" href="/">
+      <img src="<%= settings?.logoUrl || '/public/logo.svg' %>" alt="logo"/>
+      <span><%= settings?.siteName || 'DramaTOD' %></span>
+    </a>
     <form class="search" action="/search">
       <input type="text" name="q" placeholder="Cari drama..." />
       <button>Cari</button>
     </form>
     <nav class="links">
-      <a href="/admin">Admin</a>
-      <a href="/admin/logout">Logout</a>
+      <% if (isAdmin) { %>
+        <a href="/admin">Admin</a>
+        <a href="/admin/logout">Logout</a>
+      <% } else { %>
+        <a href="/admin/login">Login</a>
+      <% } %>
     </nav>
   </header>
 
-  <% if (s?.adsBodyTop) { %><div class="ad ad-top reveal"><%- s.adsBodyTop %></div><% } %>
+  <% if (settings?.adsBodyTop) { %>
+    <div class="ad ad-top reveal"><%- settings.adsBodyTop %></div>
+  <% } %>
 
   <main class="container">
     <%- body %>
   </main>
 
-  <footer class="foot glass">© <%= new Date().getFullYear() %> <%= s?.siteName || 'DramaTOD' %>. All rights reserved.</footer>
+  <footer class="foot glass">
+    © <%= new Date().getFullYear() %> <%= settings?.siteName || 'DramaTOD' %>. All rights reserved.
+  </footer>
 
   <script src="/public/js/lazyload.js"></script>
   <script src="/public/js/pagefx.js"></script>
