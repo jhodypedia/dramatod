@@ -38,24 +38,46 @@ r.get("/detail/:bookId", async (req, res) => {
   res.renderPartial("detail", { title: "Detail", bookId, chapters });
 });
 
-// Watch (stream)
+// Watch dengan index episode
 r.get("/watch/:bookId/:index", async (req, res) => {
   const bookId = req.params.bookId;
   const index = parseInt(req.params.index || "1", 10);
   const chapters = await chapterList(bookId, index);
   const chapter = chapters.find(c => c.index === index) || chapters[0];
   const streamUrl = pickStreamUrl(chapter);
-  res.renderPartial("watch", { title: `Episode ${index}`, bookId, index, streamUrl, chapter, chapters });
+  res.renderPartial("watch", {
+    title: `Episode ${index}`,
+    bookId,
+    index,
+    streamUrl,
+    chapter,
+    chapters
+  });
 });
 
-// Proxy gambar
+// Fallback: kalau hanya bookId → langsung ke episode 1
+r.get("/watch/:bookId", (req, res) => {
+  res.redirect(`/watch/${req.params.bookId}/1`);
+});
+
+// API theater (untuk infinite scroll grid)
+r.get("/api/theater", async (req, res) => {
+  const page = parseInt(req.query.page || "1", 10);
+  const list = await theaterList(page, 43);
+  res.json({ page, list });
+});
+
+// Proxy gambar (supaya thumbnail tampil)
 r.get("/img", async (req, res) => {
   try {
-    const url = decodeURIComponent(req.query.url || "");
+    const raw = req.query.url || "";
+    if (!raw) return res.status(400).send("Bad request");
+    const url = decodeURIComponent(raw);
     const { data, headers } = await axios.get(url, { responseType: "arraybuffer" });
     res.set("Content-Type", headers["content-type"] || "image/jpeg");
     res.send(data);
-  } catch {
+  } catch (err) {
+    console.error("Proxy img error:", err.message);
     res.status(404).send("Not found");
   }
 });
