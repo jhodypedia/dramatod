@@ -1,13 +1,9 @@
-<div class="card-auth">
-  <h2>Admin Login</h2>
-  <form method="post" action="/admin/login" class="form">
-    <label>Username</label>
-    <input name="username" required/>
-    <label>Password</label>
-    <input name="password" type="password" required/>
-    <button class="btn">Masuk</button>
-    <% if (typeof error !== 'undefined') { %>
-      <div class="error"><%= error %></div>
-    <% } %>
+<section class="auth">
+  <form class="card glass reveal" method="post" action="/admin/login">
+    <h2>Admin Login</h2>
+    <% if (typeof error !== 'undefined') { %><div class="alert"><%= error %></div><% } %>
+    <input name="username" placeholder="Username" required/>
+    <input name="password" type="password" placeholder="Password" required/>
+    <button class="btn primary">Masuk</button>
   </form>
-</div>
+</section>
