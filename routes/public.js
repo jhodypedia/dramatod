@@ -40,18 +40,23 @@ r.get("/detail/:bookId", async (req,res)=>{
 });
 
 // watch page
-r.get("/watch/:bookId/:index", async (req,res)=>{
+r.get("/watch/:bookId/:index", async (req, res) => {
   const bookId = req.params.bookId;
-  const index = Math.max(1, parseInt(req.params.index||"1",10));
-  const quality = parseInt(req.query.q||"720",10);
+  const index = Math.max(1, parseInt(req.params.index || "1", 10));
+  const quality = parseInt(req.query.q || "720", 10);
 
   const chapters = await chapterList(bookId, index);
-  let chapter = chapters.find(c => c.index===index || c.chapterIndex===index) || chapters[0];
-  const streamUrl = pickStreamUrl(chapter, quality);
+  let chapter = chapters.find(c => c.index === index || c.chapterIndex === index) || chapters[0];
+
+  const stream = pickStreamUrl(chapter, quality);
   const s = await Settings.findByPk(1);
 
   res.renderPartial("watch", {
-    title:`Episode ${index}`, bookId, index, streamUrl, chapter,
+    title: `Episode ${index}`,
+    bookId,
+    index,
+    stream,
+    chapter,
     s: s?.toJSON() || {}
   });
 });
