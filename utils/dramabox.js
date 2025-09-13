@@ -12,15 +12,6 @@ const baseHeaders = (tk) => ({
   "p":"43","time-zone":"+0800"
 });
 
-// Search
-export async function searchDrama(keyword) {
-  if (!keyword) return [];
-  const tk = await getToken();
-  const url = "https://sapi.dramaboxdb.com/drama-box/search/suggest";
-  const { data } = await axios.post(url, { keyword }, { headers: baseHeaders(tk) });
-  return data?.data?.suggestList || [];
-}
-
 // Theater
 export async function theaterList(page=1, channelId=43) {
   const key = `theater:${channelId}:${page}`;
@@ -35,7 +26,7 @@ export async function theaterList(page=1, channelId=43) {
   return records;
 }
 
-// Chapter list (full batch)
+// Chapter list
 export async function chapterList(bookId, index=1) {
   const tk = await getToken();
   const url = "https://sapi.dramaboxdb.com/drama-box/chapterv2/batch/load";
@@ -48,22 +39,24 @@ export async function chapterList(bookId, index=1) {
   return data?.data?.chapterList || [];
 }
 
-// Chapter page (realtime + cache 5m)
-export async function chapterPage(bookId, page=1, perPage=20) {
-  const key = `chap:${bookId}:${page}:${perPage}`;
-  const cache = getCache(key); if (cache) return cache;
-  const all = await chapterList(bookId, 1);
-  const res = all.slice((page-1)*perPage, page*perPage);
-  setCache(key, res, 300);
-  return res;
-}
-
-// Pick stream by quality
-export function pickStreamUrl(chapter, quality=720) {
+// Pick stream: otomatis pilih m3u8 kalau ada, else MP4
+export function pickStreamUrl(chapter, quality = 720) {
   if (!chapter?.cdnList?.length) return null;
+
+  // ✅ kasus HLS (m3u8)
+  if (chapter.cdnList[0].url) {
+    return { src: chapter.cdnList[0].url, type: "application/x-mpegURL" };
+  }
+
+  // ✅ kasus MP4
   for (const cdn of chapter.cdnList) {
     const v = cdn.videoPathList?.find(x => x.quality === quality);
-    if (v) return v.videoPath;
+    if (v) return { src: v.videoPath, type: "video/mp4" };
   }
-  return chapter.cdnList[0]?.videoPathList?.[0]?.videoPath || null;
+
+  // fallback: ambil video pertama
+  const fallback = chapter.cdnList[0]?.videoPathList?.[0];
+  if (fallback) return { src: fallback.videoPath, type: "video/mp4" };
+
+  return null;
 }
