@@ -12,8 +12,8 @@
   <div class="scroll">
     <% (chapters || []).forEach(ch => { %>
       <div class="card <%= ch.index === index ? 'active' : '' %>" onclick="loadEpisode(<%= ch.index %>)">
-        <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>&w=50"
-             data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || '') %>"
+        <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>&w=50"
+             data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
              class="lazy blur" alt="ep"/>
         <div class="ep-badge">Ep <%= ch.index %></div>
       </div>
@@ -35,7 +35,6 @@
     player = videojs("player", { fluid: true, autoplay: true, preload: "auto" });
     player.src({ src: url, type: "application/x-mpegURL" });
 
-    // tombol prev/next
     const Btn = videojs.getComponent('Button');
     class PrevBtn extends Btn { handleClick(){ loadEpisode(currentIndex - 1); } }
     class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex + 1); } }
@@ -48,8 +47,9 @@
       if (currentIndex < episodes.length) bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
     });
 
-    // auto next
-    player.on("ended", () => { if (currentIndex < episodes.length) loadEpisode(currentIndex + 1); });
+    player.on("ended", () => {
+      if (currentIndex < episodes.length) loadEpisode(currentIndex + 1);
+    });
   }
 
   function episodeUrl(i) {
