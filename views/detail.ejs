@@ -1,0 +1,8 @@
+<h2 class="title">Daftar Episode</h2>
+<div class="episode-list">
+  <% (chapters || []).forEach(ch => { %>
+    <a class="episode" href="/watch/<%= bookId %>/<%= ch.index %>">
+      Episode <%= ch.index %> <span class="muted"><%= ch.chapterName || '' %></span>
+    </a>
+  <% }) %>
+</div>
