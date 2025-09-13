@@ -1,0 +1,13 @@
+<div class="card-auth">
+  <h2>Admin Login</h2>
+  <form method="post" action="/admin/login" class="form">
+    <label>Username</label>
+    <input name="username" required/>
+    <label>Password</label>
+    <input name="password" type="password" required/>
+    <button class="btn">Masuk</button>
+    <% if (typeof error !== 'undefined') { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+  </form>
+</div>
