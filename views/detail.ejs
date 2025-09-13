@@ -1,51 +1,57 @@
 <div class="detail-info">
-  <h1><%= chapters[0]?.bookName || '' %></h1>
-  <p class="intro"><%= chapters[0]?.introduction || '' %></p>
-  <div class="tags">
-    <% (chapters[0]?.tags || []).forEach(tag => { %>
-      <span class="tag"><%= tag %></span>
-    <% }) %>
-  </div>
-  <div class="stats">
-    <span><%= chapters[0]?.playCount || '0' %> views</span>
-    <span>Rilis: <%= chapters[0]?.shelfTime || '' %></span>
-  </div>
+  <h1><%= bookId %></h1>
 </div>
+
+<% if (settings.adsenseCode) { %>
+  <div class="adsense">
+    <%- settings.adsenseCode %>
+  </div>
+<% } %>
 
 <h2 class="title">Daftar Episode</h2>
 <div id="episode-list" class="episode-list"></div>
 <button id="loadMore" class="btn">Load More</button>
 
 <script>
-  const chapters = <%- JSON.stringify(chapters) %>;
-  let perPage = 20;
-  let currentPage = 1;
+  const bookId = "<%= bookId %>";
+  let page = 1;
+  let loading = false;
 
-  function renderEpisodes() {
+  async function loadEpisodes() {
+    if (loading) return;
+    loading = true;
+
+    const res = await fetch(`/api/chapters/${bookId}?page=${page}`);
+    const data = await res.json();
+    const list = data.list || [];
+
     const container = document.getElementById("episode-list");
-    container.innerHTML = "";
-    const end = perPage * currentPage;
-    const list = chapters.slice(0, end);
     list.forEach(ch => {
+      const epIndex = ch.index || ch.chapterIndex || 0;
+      const epName = ch.chapterName || ch.title || ("EP " + epIndex);
+      const cover = ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '';
+
       const a = document.createElement("a");
       a.className = "episode";
-      a.href = `/watch/<%= bookId %>/${ch.index}`;
+      a.href = `/watch/${bookId}/${epIndex}`;
       a.innerHTML = `
-        <img src="/img?url=${encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '')}" class="lazy blur"/>
+        <img src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"/>
         <div class="ep-meta">
-          <span>Episode ${ch.index}</span>
-          <span class="muted">${ch.chapterName || ''}</span>
+          <span>Episode ${epIndex}</span>
+          <span class="muted">${epName}</span>
         </div>
       `;
       container.appendChild(a);
     });
-    if (end >= chapters.length) document.getElementById("loadMore").style.display = "none";
+
+    if (!list.length) {
+      document.getElementById("loadMore").style.display = "none";
+    }
+
+    page++;
+    loading = false;
   }
 
-  document.getElementById("loadMore").addEventListener("click", () => {
-    currentPage++;
-    renderEpisodes();
-  });
-
-  renderEpisodes();
+  document.getElementById("loadMore").addEventListener("click", loadEpisodes);
+  loadEpisodes();
 </script>
