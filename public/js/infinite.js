@@ -1,29 +1,17 @@
-let page = Number(window.__START_PAGE__ || 1);
-let loading = false, done = false;
-
-async function loadPage() {
-  if (loading || done) return;
-  loading = true;
-  document.getElementById("loader")?.classList.remove("hidden");
-  const res = await fetch(`/api/theater?page=${page}`);
-  const { list } = await res.json();
-  if (!list || list.length === 0) done = true;
-  else {
-    const grid = document.getElementById("grid");
-    list.forEach(item => {
-      const a = document.createElement("a");
-      a.className = "item";
-      a.href = `/detail/${item.bookId || item.id}`;
-      a.innerHTML = `<img src="/img?url=${encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || '')}" class="lazy blur"/>`;
-      grid.appendChild(a);
-    });
-    page++;
-  }
-  document.getElementById("loader")?.classList.add("hidden");
-  loading = false;
-  if (window.reinitLazy) window.reinitLazy();
+let currentPage = window.__START_PAGE__ || 1, loading=false, done=false;
+async function loadMore(){
+  if(loading||done) return; loading=true;
+  const res = await fetch(`/api/theater?page=${currentPage+1}`); const data = await res.json();
+  const list = data.list || []; if(!list.length){ done=true; document.getElementById("loader").style.display="none"; return; }
+  const grid = document.getElementById("grid");
+  list.forEach(item=>{
+    const cover = item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || '';
+    const div = document.createElement("a"); div.className="item card hover3d"; div.href="/detail/"+(item.bookId||item.id);
+    div.innerHTML = `<div class="thumb shimmer"><img src="/img?url=${encodeURIComponent(cover)}&w=50" data-src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"></div>
+                     <div class="meta"><div class="name clamp-1">${item.title||item.bookName||''}</div><div class="muted">${item.playCount||''}</div></div>`;
+    grid.appendChild(div);
+  });
+  currentPage++; loading=false; window.dispatchEvent(new Event("lazy-refresh"));
 }
-loadPage();
-window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) loadPage();
-});
+const loader = document.getElementById("loader");
+if(loader){ new IntersectionObserver(e=>{ if(e[0].isIntersecting) loadMore(); }).observe(loader); }
