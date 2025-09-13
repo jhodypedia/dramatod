@@ -1,94 +1,85 @@
-<div class="video-container">
+<section class="player-wrap reveal">
   <video id="player" class="video-js vjs-big-play-centered" controls playsinline></video>
-</div>
+  <% if (s?.adsPlayerOverlayHtml) { %>
+    <div class="ad-overlay clicktrack" onclick="fetch('/track/ad-click',{method:'POST'})">
+      <%- s.adsPlayerOverlayHtml %>
+    </div>
+  <% } %>
+</section>
 
-<% if (settings.adsenseCode) { %>
-  <div class="adsense" style="margin:15px 0;">
-    <%- settings.adsenseCode %>
-  </div>
-<% } %>
-
-<div class="quality-select">
+<section class="controls reveal">
   <label>Kualitas:</label>
-  <select id="quality" onchange="reloadQuality(this.value)">
+  <select id="quality" class="select">
     <option value="1080">1080p</option>
     <option value="720" selected>720p</option>
     <option value="480">480p</option>
   </select>
-</div>
+</section>
 
-<div class="row">
+<section class="row reveal">
   <h2>Pilih Episode</h2>
-  <div id="episode-scroll" class="scroll"></div>
-  <button id="loadMoreEp" class="btn">Load More</button>
-</div>
+  <div id="episode-scroll" class="scrollcards"></div>
+  <button id="moreEp" class="btn ghost">Muat Lagi</button>
+</section>
 
 <link href="https://cdn.jsdelivr.net/npm/video.js@8/dist/video-js.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/video.js@8/dist/video.min.js"></script>
-
 <script>
   const bookId = "<%= bookId %>";
   let currentIndex = <%= index %>;
-  let player;
   let currentQuality = 720;
-  let pageEp = 1;
+  let player;
 
-  function initPlayer(url) {
-    if (player) player.dispose();
-    player = videojs("player", { fluid: true, autoplay: true, preload: "auto" });
-    player.src({ src: url, type: "application/x-mpegURL" });
+  function initPlayer(url){
+    if(player) player.dispose();
+    player = videojs("player",{ fluid:true, autoplay:true, preload:"auto" });
+    player.src({ src:url, type:"application/x-mpegURL" });
+
+    // Prev/Next custom
+    const Btn = videojs.getComponent('Button');
+    class PrevBtn extends Btn { handleClick(){ loadEpisode(Math.max(1,currentIndex-1)); } }
+    class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex+1); } }
+    videojs.registerComponent('PrevBtn', PrevBtn); videojs.registerComponent('NextBtn', NextBtn);
+    player.ready(()=>{ const bar=player.getChild('controlBar'); bar.addChild('PrevBtn',{},0); bar.addChild('NextBtn',{},2); });
+    player.on('ended',()=>loadEpisode(currentIndex+1));
   }
 
-  async function loadEpisode(i) {
+  async function loadEpisode(i){
     const res = await fetch(`/api/chapters/${bookId}?page=${Math.ceil(i/20)}`);
-    const data = await res.json();
-    const ep = data.list.find(e => (e.index || e.chapterIndex) === i);
-    if (!ep) return;
-
-    const video = ep.cdnList?.[0]?.videoPathList?.find(v => v.quality == currentQuality) 
-               || ep.cdnList?.[0]?.videoPathList?.[0];
-    if (video) {
-      currentIndex = i;
-      initPlayer(video.videoPath);
-      history.replaceState({}, "", `/watch/${bookId}/${i}`);
-    }
+    const { list=[] } = await res.json();
+    const ep = list.find(e => (e.index||e.chapterIndex) === i);
+    if(!ep) return;
+    const v = (ep.cdnList?.[0]?.videoPathList?.find(x=>x.quality==currentQuality)) || ep.cdnList?.[0]?.videoPathList?.[0];
+    if(v){ currentIndex=i; initPlayer(v.videoPath); history.replaceState({}, "", `/watch/${bookId}/${i}`); }
+    highlightCard(i);
   }
 
-  function reloadQuality(q) {
-    currentQuality = parseInt(q);
-    loadEpisode(currentIndex);
+  function highlightCard(i){
+    document.querySelectorAll(".card").forEach(x=>x.classList.remove("active"));
+    const el = document.querySelector(`.card[data-i="${i}"]`); if(el) el.classList.add("active");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function loadEpisodeList() {
-    const res = await fetch(`/api/chapters/${bookId}?page=${pageEp}`);
-    const data = await res.json();
-    const list = data.list || [];
-    const container = document.getElementById("episode-scroll");
-
-    list.forEach(ch => {
-      const epIndex = ch.index || ch.chapterIndex || 0;
+  // Episode list AJAX
+  let epPage = 1; const cont = document.getElementById("episode-scroll");
+  async function loadList(){
+    const res = await fetch(`/api/chapters/${bookId}?page=${epPage}`);
+    const { list=[] } = await res.json();
+    list.forEach(ch=>{
+      const i = ch.index || ch.chapterIndex || 1;
       const cover = ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '';
-      const div = document.createElement("div");
-      div.className = `card ${epIndex === currentIndex ? 'active' : ''}`;
-      div.onclick = () => loadEpisode(epIndex);
-      div.innerHTML = `
-        <img src="/img?url=${encodeURIComponent(cover)}" class="lazy blur" alt="ep"/>
-        <div class="ep-badge">Ep ${epIndex}</div>
-      `;
-      container.appendChild(div);
+      const a = document.createElement("a"); a.href="javascript:void(0)"; a.className="card hover3d"; a.dataset.i=i; a.onclick=()=>loadEpisode(i);
+      a.innerHTML = `<div class="thumb shimmer"><img src="/img?url=${encodeURIComponent(cover)}&w=50" data-src="/img?url=${encodeURIComponent(cover)}" class="lazy blur"/></div>
+                     <div class="meta"><div class="name">Ep ${i}</div></div>`;
+      cont.appendChild(a);
     });
-
-    if (!list.length) document.getElementById("loadMoreEp").style.display = "none";
-    pageEp++;
+    if(!list.length) document.getElementById("moreEp").style.display="none";
+    epPage++; window.dispatchEvent(new Event("lazy-refresh")); highlightCard(currentIndex);
   }
 
-  document.getElementById("loadMoreEp").addEventListener("click", loadEpisodeList);
-  loadEpisodeList();
-  loadEpisode(currentIndex);
-</script>
+  document.getElementById("quality").addEventListener("change",(e)=>{ currentQuality=parseInt(e.target.value); loadEpisode(currentIndex); });
+  document.getElementById("moreEp").addEventListener("click", loadList);
 
-<style>
-  .quality-select { margin: 10px 0; }
-  .card.active { outline: 2px solid #e50914; }
-  .ep-badge { background: rgba(0,0,0,.6); color:#fff; text-align:center; font-size:12px; }
-</style>
+  // start
+  loadList(); loadEpisode(currentIndex);
+</script>
