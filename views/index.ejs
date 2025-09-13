@@ -1,11 +1,14 @@
 <% if (hero) { %>
 <section class="hero">
-  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || '') %>&w=50"
-       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || '') %>"
+  <img src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || '') %>&w=50"
+       data-src="/img?url=<%= encodeURIComponent(hero.cover || hero.coverImg || hero.hCover || hero.hSmallCover || hero.verticalCover || hero.coverWap || '') %>"
        class="lazy blur" alt="hero"/>
   <div class="overlay"></div>
   <div class="content">
     <h1><%= (hero.title || hero.bookName || 'Drama Pilihan') %></h1>
+    <% if (hero.introduction) { %>
+      <p class="intro"><%= hero.introduction.substring(0, 150) %>...</p>
+    <% } %>
     <a href="/detail/<%= hero.bookId || hero.id %>" class="btn">Tonton Sekarang</a>
   </div>
 </section>
@@ -18,8 +21,8 @@
     <% (row.items || []).forEach(item => { %>
       <div class="card">
         <a href="/detail/<%= item.bookId || item.id %>">
-          <img src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '') %>&w=50"
-               data-src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || '') %>"
+          <img src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || '') %>&w=50"
+               data-src="/img?url=<%= encodeURIComponent(item.cover || item.coverImg || item.hCover || item.hSmallCover || item.verticalCover || item.coverWap || '') %>"
                class="lazy blur" alt="cover"/>
         </a>
       </div>
