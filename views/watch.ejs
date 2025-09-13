@@ -1,0 +1,76 @@
+<div class="video-container">
+  <video id="player" class="video-js vjs-big-play-centered" controls playsinline></video>
+  <% if (settings.adsPlayerOverlayHtml) { %>
+    <div class="ad-overlay" onclick="trackAdClick()">
+      <%- settings.adsPlayerOverlayHtml %>
+    </div>
+  <% } %>
+</div>
+
+<div class="row">
+  <h2>Pilih Episode</h2>
+  <div class="scroll">
+    <% (chapters || []).forEach(ch => { %>
+      <div class="card" onclick="loadEpisode(<%= ch.index %>)">
+        <img src="/img?url=<%= encodeURIComponent(ch.cover || chapter?.cover || '') %>&w=50"
+             data-src="/img?url=<%= encodeURIComponent(ch.cover || chapter?.cover || '') %>"
+             class="lazy blur" alt="ep"/>
+        <div class="ep-badge">Ep <%= ch.index %></div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/video.js@8/dist/video-js.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/video.js@8/dist/video.min.js"></script>
+<script src="/public/js/lazyload.js"></script>
+
+<script>
+  const episodes = <%- JSON.stringify(chapters) %>;
+  let currentIndex = <%= index %>;
+  let player;
+
+  function initPlayer(url) {
+    if (player) player.dispose();
+    player = videojs("player", {
+      fluid: true,
+      autoplay: false,
+      controlBar: {
+        children: [
+          "playToggle","currentTimeDisplay","progressControl",
+          "durationDisplay","volumePanel","fullscreenToggle"
+        ]
+      }
+    });
+    player.src({ src: url, type: "application/x-mpegURL" });
+
+    const Btn = videojs.getComponent('Button');
+    class PrevBtn extends Btn { handleClick(){ loadEpisode(currentIndex - 1); } }
+    class NextBtn extends Btn { handleClick(){ loadEpisode(currentIndex + 1); } }
+    videojs.registerComponent('PrevBtn', PrevBtn);
+    videojs.registerComponent('NextBtn', NextBtn);
+    player.ready(() => {
+      const bar = player.getChild('controlBar');
+      bar.addChild('PrevBtn', { controlText: 'Prev' }, bar.children().length - 1);
+      bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
+    });
+  }
+
+  function episodeUrl(i) {
+    const ep = episodes.find(e => e.index === i);
+    return ep?.cdnList?.[0]?.url || null;
+  }
+
+  function loadEpisode(i) {
+    const url = episodeUrl(i);
+    if (!url) return;
+    currentIndex = i;
+    initPlayer(url);
+    history.replaceState({}, "", `/watch/<%= bookId %>/${i}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function trackAdClick(){ fetch("/track/ad-click",{ method:"POST" }); }
+
+  loadEpisode(currentIndex);
+</script>
