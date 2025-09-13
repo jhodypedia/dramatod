@@ -1,3 +1,8 @@
+<div class="watch-header">
+  <h2><%= chapter?.chapterName || 'Episode ' + index %></h2>
+  <span><%= chapter?.playCount || '0' %> views</span>
+</div>
+
 <div class="video-container">
   <video id="player" class="video-js vjs-big-play-centered" controls playsinline></video>
   <% if (settings.adsPlayerOverlayHtml) { %>
@@ -12,8 +17,7 @@
   <div class="scroll">
     <% (chapters || []).forEach(ch => { %>
       <div class="card <%= ch.index === index ? 'active' : '' %>" onclick="loadEpisode(<%= ch.index %>)">
-        <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>&w=50"
-             data-src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
+        <img src="/img?url=<%= encodeURIComponent(ch.cover || ch.coverImg || ch.hCover || ch.hSmallCover || ch.verticalCover || ch.coverWap || '') %>"
              class="lazy blur" alt="ep"/>
         <div class="ep-badge">Ep <%= ch.index %></div>
       </div>
@@ -47,9 +51,7 @@
       if (currentIndex < episodes.length) bar.addChild('NextBtn', { controlText: 'Next' }, bar.children().length - 1);
     });
 
-    player.on("ended", () => {
-      if (currentIndex < episodes.length) loadEpisode(currentIndex + 1);
-    });
+    player.on("ended", () => { if (currentIndex < episodes.length) loadEpisode(currentIndex + 1); });
   }
 
   function episodeUrl(i) {
@@ -60,7 +62,10 @@
   function loadEpisode(i) {
     if (i < 1 || i > episodes.length) return;
     const url = episodeUrl(i);
-    if (!url) return;
+    if (!url) {
+      alert("Stream tidak tersedia untuk episode ini!");
+      return;
+    }
     currentIndex = i;
     initPlayer(url);
     history.replaceState({}, "", `/watch/<%= bookId %>/${i}`);
